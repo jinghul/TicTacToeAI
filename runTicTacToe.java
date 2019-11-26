@@ -180,7 +180,6 @@ public class runTicTacToe {
 		winningLines.add(oneWinCondtion);	
 		
 		return winningLines;
-		
 	}
 
 	
@@ -219,6 +218,7 @@ public class runTicTacToe {
 				p3.state = state3;
 				
 				//print the satisified winning line (one of them if there are several)
+				System.out.println("\nWinning Line--------------------");
 				p0.printPosition();
 				p1.printPosition();
 				p2.printPosition();
@@ -311,6 +311,7 @@ public class runTicTacToe {
 				if(targetBoard.get(i).state==0)
 				{
 					targetBoard.get(i).state = player;
+					targetBoard.get(i).printPosition();
 					return true;
 				}
 				else
@@ -335,13 +336,17 @@ public class runTicTacToe {
 			{
 				positionTicTacToe player1NextMove = ai1.myAIAlgorithm(board,1); //1 stands for player 1
 				if(makeMove(player1NextMove,1,board))
+				{	
 					turn = 2;
+				}
 			}
 			else if(turn==2)
 			{
 				positionTicTacToe player2NextMove = ai2.myAIAlgorithm(board,2); //2 stands for player 2
 				if(makeMove(player2NextMove,2,board))
+				{
 					turn = 1;
+				}
 			}
 			else 
 			{
@@ -359,7 +364,7 @@ public class runTicTacToe {
 		}
 		else if(result==2)
 		{
-			//game ends, player 1 wins 
+			//game ends, player 2 wins 
 			System.out.println("Player2 Wins");
 			printBoardTicTacToe(board);
 		}
@@ -377,10 +382,7 @@ public class runTicTacToe {
 		
 	}
 	
-
-	
 	//run the game once
-
 	public static void main(String[] args) {		
 
 		//run game loop
