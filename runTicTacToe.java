@@ -316,6 +316,7 @@ public class runTicTacToe {
 				}
 				else
 				{
+					position.printPosition();
 					System.out.println("Error: this is not a valid move.");
 				}
 			}
@@ -359,19 +360,19 @@ public class runTicTacToe {
 		if(result==1)
 		{
 			//game ends, player 1 wins 
-			System.out.println("Player1 Wins");
+			System.out.println("\nPlayer1 Wins");
 			printBoardTicTacToe(board);
 		}
 		else if(result==2)
 		{
 			//game ends, player 2 wins 
-			System.out.println("Player2 Wins");
+			System.out.println("\nPlayer2 Wins");
 			printBoardTicTacToe(board);
 		}
 		else if(result==-1)
 		{
 			//game ends, it's a draw 
-			System.out.println("This is a draw.");
+			System.out.println("\nThis is a draw.");
 			printBoardTicTacToe(board);
 		}
 		else

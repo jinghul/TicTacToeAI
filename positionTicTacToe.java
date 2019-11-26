@@ -6,8 +6,7 @@ public class positionTicTacToe {
 
     public void printPosition() {
         System.out.print("(" + x + "," + y + "," + z + ")");
-        System.out.println("state: " + state);
-
+        System.out.println(" state: " + state);
     }
 
     positionTicTacToe(int setX, int setY, int setZ, int setState) {

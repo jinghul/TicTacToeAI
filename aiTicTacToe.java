@@ -2,7 +2,7 @@ import java.util.*;
 
 public class aiTicTacToe {
 
-    public static final int maxDepth = 4;
+    public static final int maxDepth = 1;
     public static List<List<positionTicTacToe>> winningLines = initializeWinningLines();
 
     public int player; // 1 for player 1 and 2 for player 2
@@ -42,7 +42,7 @@ public class aiTicTacToe {
 		List<positionTicTacToe> copiedBoard = new ArrayList<positionTicTacToe>();
 		for(int i=0;i<board.size();i++)
 		{
-			copiedBoard.add(new positionTicTacToe(board.get(i).x,board.get(i).y,board.get(i).z,board.get(i).state));
+			copiedBoard.add(new positionTicTacToe(board.get(i).x,board.get(i).y,board.get(i).z, board.get(i).state));
 		}
 		return copiedBoard;
 	}
@@ -55,7 +55,8 @@ public class aiTicTacToe {
         positionTicTacToe nextMove = new positionTicTacToe(0, 0, 0);
 
         // run minimax
-        maximize(nextMove, boardCopy, player, 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        int maxScore = maximize(nextMove, boardCopy, player, 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        System.out.println(maxScore);
 
         // return best move
         return nextMove;
@@ -89,11 +90,15 @@ public class aiTicTacToe {
                 // change according to the player
                 int score = minimize(board, opponent(player), (depth + 1), alpha, beta);
 
-                if (depth == 0 && score > maxScore) {
-                    positionTicTacToe move = board.get(i);
-                    nextMove.x = move.x;
-                    nextMove.y = move.y;
-                    nextMove.z = move.z;
+                if (score >= maxScore) {
+                    maxScore = score;
+                    if (depth == 0)
+                    {
+                        positionTicTacToe move = board.get(i);
+                        nextMove.x = move.x;
+                        nextMove.y = move.y;
+                        nextMove.z = move.z;
+                    }
                 }
 
                 alpha = Math.max(alpha, maxScore);
@@ -133,9 +138,8 @@ public class aiTicTacToe {
         return minScore;
     }
 
-    // TODO: change
     private int heuristic(List<positionTicTacToe> board, int player) {
-        int other = player == 1 ? 2 : 1;
+        int opponent = opponent(player);
         int playerScore = 0;
         int otherScore = 0;
         for (List<positionTicTacToe> winningLine : winningLines) {
@@ -147,7 +151,7 @@ public class aiTicTacToe {
             int playerSpots = (int) states.stream().filter(state -> state == player).count();
             switch (playerSpots) {
             case 4:
-                playerScore += 1000;
+                playerScore += 10000;
                 break;
             case 3:
                 playerScore += 100;
@@ -160,10 +164,10 @@ public class aiTicTacToe {
                 break;
             }
 
-            int otherSpots = (int) states.stream().filter(state -> state == other).count();
+            int otherSpots = (int) states.stream().filter(state -> state == opponent).count();
             switch (otherSpots) {
             case 4:
-                otherScore += 1000;
+                otherScore += 10000;
                 break;
             case 3:
                 otherScore += 100;
