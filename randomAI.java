@@ -1,3 +1,5 @@
+import java.util.*;
+
 public class randomAI extends aiTicTacToe
 {
     public randomAI(int player) {

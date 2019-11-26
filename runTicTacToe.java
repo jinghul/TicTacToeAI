@@ -10,17 +10,22 @@ public class runTicTacToe {
 	
 	public int result;
 
-	public runTicTacToe()
+	public runTicTacToe(aiTicTacToe ai1, aiTicTacToe ai2)
 	{
 		//initialize winning lines
 		winningLines = initializeWinningLines();
 
-		//initialzie board
+		//initialize board
 		board = createTicTacToeBoard();
-		
-		//initialize AI players
-		ai1 = new aiTicTacToe(1);
-		ai2 = new aiTicTacToe(2);
+
+		// initialize ais
+		this.ai1 = ai1;
+		this.ai2 = ai2;
+	}
+
+	public runTicTacToe()
+	{
+		this(new aiTicTacToe(1), new randomAI(2));	
 	}
 
 	private List<positionTicTacToe> createTicTacToeBoard()

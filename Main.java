@@ -30,13 +30,13 @@ class Main {
             int turn = startingPlayer;
             if (turn == -1) turn = random.nextInt(2) + 1;
 
-            runTicTacToe rttt = new runTicTacToe();
+            runTicTacToe rttt = new runTicTacToe(ai1, ai2);
             int result = rttt.run(turn, false);
 
             if (result == -1) return;
             else if (result == 1) ai1wins++;
             else if (result == 2) ai2wins++;
-            else draws++;
+            else if (result == 3) draws++;
         }
 
         System.out.println("Test Results\n----------------");
