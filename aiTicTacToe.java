@@ -2,40 +2,58 @@ import java.util.*;
 
 public class aiTicTacToe {
 
-    public static final int maxDepth = 1;
-    public static List<List<positionTicTacToe>> winningLines = initializeWinningLines();
+    public static final int maxDepth = 1; // max lookahead depth to explore
+
+    // TODO: convert to array?
+    public static List<List<positionTicTacToe>> winningLines = initializeWinningLines(); // list of winning lines
+    public static List<List<Integer>> possibleWins = mapWinningLines(); // list of possible wins for each block
 
     public int player; // 1 for player 1 and 2 for player 2
 
+    /**
+     * Public constructor that instantiated the class with the player number.
+     * @param setPlayer
+     */
     public aiTicTacToe(int setPlayer) {
         player = setPlayer;
     }
 
+    /**
+     * Returns a boolean representing whether the requested position is an empty board position.
+     * @param position
+     * @param board
+     * @return boolean
+     */
     private boolean isEmptyPosition(positionTicTacToe position, List<positionTicTacToe> board) {
         return getStateOfPositionFromBoard(position, board) == 0;
     }
 
+    /**
+     * A helper function to get state of a certain position in the Tic-Tac-Toe board
+     * by given position TicTacToe.
+     * @param position
+     * @param board
+     * @return state
+     */
     private int getStateOfPositionFromBoard(positionTicTacToe position, List<positionTicTacToe> board) {
-        // a helper function to get state of a certain position in the Tic-Tac-Toe board
-        // by given position TicTacToe
         int index = position.x * 16 + position.y * 4 + position.z;
         return board.get(index).state;
     }
 
-    public positionTicTacToe randomAI(List<positionTicTacToe> board, int player) {
-        positionTicTacToe myNextMove = new positionTicTacToe(0, 0, 0);
-
-        do {
-            Random rand = new Random();
-            int x = rand.nextInt(4);
-            int y = rand.nextInt(4);
-            int z = rand.nextInt(4);
-            myNextMove = new positionTicTacToe(x, y, z);
-        } while (getStateOfPositionFromBoard(myNextMove, board) != 0);
-
-        return myNextMove;
+    /**
+     * Returns the opponent number of the given player.
+     * @param player
+     * @return opponent number
+     */
+    public int opponent(int player) {
+        return player == 1 ? 2 : 1;
     }
 
+    /**
+     * Deep copies the TicTacToe board for modification. Returns the deepcopy.
+     * @param board
+     * @return copied board
+     */
     private List<positionTicTacToe> deepCopyATicTacToeBoard(List<positionTicTacToe> board)
 	{
 		//deep copy of game boards
@@ -47,6 +65,13 @@ public class aiTicTacToe {
 		return copiedBoard;
 	}
 
+    /**
+     * Encapsulated function to call for making a TicTacToe move.
+     * Runs minimax and returns the best move (position) given the lookahead depth.
+     * @param board
+     * @param player
+     * @return next move to make
+     */
     public positionTicTacToe myAIAlgorithm(List<positionTicTacToe> board, int player) {
         // deepcopy board state for modification
         List<positionTicTacToe> boardCopy = deepCopyATicTacToeBoard(board);
@@ -56,21 +81,22 @@ public class aiTicTacToe {
 
         // run minimax
         int maxScore = maximize(nextMove, boardCopy, player, 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
-        System.out.println(maxScore);
+        System.out.println("score: " + maxScore);
 
         // return best move
         return nextMove;
     }
 
-    public int opponent(int player) {
-        if (player == 1) {
-            return 2;
-        } else if (player == 2) {
-            return 1;
-        }
-        return 0;
-    }
-
+    /**
+     * The maximizer portion of the minimax algorithm.
+     * @param nextMove object to store next move
+     * @param board
+     * @param player
+     * @param depth
+     * @param alpha
+     * @param beta
+     * @return int representing best board state that can be reached.
+     */
     public int maximize(positionTicTacToe nextMove, List<positionTicTacToe> board, int player,
             int depth, int alpha, int beta) {
 
@@ -112,6 +138,15 @@ public class aiTicTacToe {
         return maxScore;
     }
 
+    /**
+     * The minimizer portion of the minimax algorithm.
+     * @param board
+     * @param player
+     * @param depth
+     * @param alpha
+     * @param beta
+     * @return int representing the minimum board state
+     */
     public int minimize(List<positionTicTacToe> board, int player,
             int depth, int alpha, int beta) {
 
@@ -138,10 +173,19 @@ public class aiTicTacToe {
         return minScore;
     }
 
+    /**
+     * The heuristic function to calculate a number representing the state of the board.
+     * Calculates the number of pieces in each possible "open", winning row, where open 
+     * means there is only one user's pieces in that row.
+     * @param board
+     * @param player
+     * @return the heuristic number of the board
+     */
     private int heuristic(List<positionTicTacToe> board, int player) {
         int opponent = opponent(player);
         int playerScore = 0;
-        int otherScore = 0;
+        int opponentScore = 0;
+
         for (List<positionTicTacToe> winningLine : winningLines) {
             List<Integer> states = new ArrayList<>();
             for (positionTicTacToe pos : winningLine) {
@@ -167,27 +211,29 @@ public class aiTicTacToe {
             int otherSpots = (int) states.stream().filter(state -> state == opponent).count();
             switch (otherSpots) {
             case 4:
-                otherScore += 10000;
+                opponentScore += 10000;
                 break;
             case 3:
-                otherScore += 100;
+                opponentScore += 100;
                 break;
             case 2:
-                otherScore += 10;
+                opponentScore += 10;
                 break;
             case 1:
-                otherScore += 1;
+                opponentScore += 1;
                 break;
             }
         }
 
-        // System.out.println("heuristic " + (playerScore - otherScore));
-        return playerScore - otherScore;
+        return playerScore - opponentScore;
     }
 
+    /**
+     * Create a list of winning line so that the game will "brute-force" check if a
+     * player satisfied any winning condition(s).
+     * @return A list of the 76 winning lines.
+     */
     public static List<List<positionTicTacToe>> initializeWinningLines() {
-        // create a list of winning line so that the game will "brute-force" check if a
-        // player satisfied any winning condition(s).
         List<List<positionTicTacToe>> winningLines = new ArrayList<List<positionTicTacToe>>();
 
         // 48 straight winning lines
