@@ -25,7 +25,7 @@ public class runTicTacToe {
 
 	public runTicTacToe()
 	{
-		this(new aiTicTacToe(1), new randomAI(2));	
+		this(new aiTicTacToe(1, true), new aiTicTacToe(2, false));	
 	}
 
 	private List<positionTicTacToe> createTicTacToeBoard()
@@ -131,7 +131,7 @@ public class runTicTacToe {
 			{
 				positionTicTacToe player1NextMove = ai1.myAIAlgorithm(board, 1);
 				if (verbose) player1NextMove.printPosition();
-				if (makeMove(player1NextMove,1,board)) turn = 2;
+				if (makeMove(player1NextMove, 1, board)) turn = 2;
 				else return -1;
 			}
 			else if(turn == 2)

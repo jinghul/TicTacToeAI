@@ -2,28 +2,42 @@ import java.util.*;
 
 public class aiTicTacToe {
 
-    public static final int DEFAULT_DEPTH = 2; // max lookahead depth to explore
+    public static final int BOARD_SIZE = 64; // 4x4x4
+    public static final int DEFAULT_DEPTH = 4; // max lookahead depth to explore
     public static positionTicTacToe[][] winningLines; // list of winning lines
-    public static int[][] possibleWins; // list of possible wins for each block
+    public static int[] moveOrdering; // list of possible wins for each block
 
     static {
         winningLines = initializeWinningLines(); 
+        moveOrdering = mapWinningLines(winningLines);
     }
 
     public int player; // 1 for player 1 and 2 for player 2
-    public int considered = 0; // count number of moves considered
-    public int maxDepth = 1;
-
-    public boolean verbose; // whether to print out moves
+    private int considered = 0; // count number of moves considered
+    private int maxDepth = DEFAULT_DEPTH;
+    private boolean verbose; // whether to print out moves
 
     /**
      * Public constructor that instantiated the class with the player
-     * number and the max depth.
+     * number and the max depth as well as verbose printing.
      * @param setPlayer
+     * @param maxDepth
+     * @param verbose
      */
     public aiTicTacToe(int setPlayer, int maxDepth, boolean verbose) {
         player = setPlayer;
         this.maxDepth = maxDepth;
+        this.verbose = verbose;
+    }
+
+    /**
+     * Public constructor that instantiated the class with the player
+     * number and the verbose printing.
+     * @param setPlayer
+     * @param verbose
+     */
+    public aiTicTacToe(int setPlayer, boolean verbose) {
+        this(setPlayer);
         this.verbose = verbose;
     }
 
@@ -33,7 +47,6 @@ public class aiTicTacToe {
      */
     public aiTicTacToe(int setPlayer) {
         player = setPlayer;
-        maxDepth = DEFAULT_DEPTH;
     }
 
     /**
@@ -68,6 +81,17 @@ public class aiTicTacToe {
         return board.get(index).state;
     }
 
+    public int[] getStateOfPositionFromBoard(positionTicTacToe[] positions, List<positionTicTacToe> board)
+    {   
+        int[] states = new int[positions.length];
+        for (int i = 0; i < positions.length; i++) 
+        {
+            int index = positions[i].x * 16 + positions[i].y * 4 + positions[i].z; // getIndex()
+            states[i] = board.get(index).state;
+        }
+        return states;
+    }
+
     /**
      * Returns the opponent number of the given player.
      * @param player
@@ -86,7 +110,7 @@ public class aiTicTacToe {
 	{
 		//deep copy of game boards
 		List<positionTicTacToe> copiedBoard = new ArrayList<positionTicTacToe>();
-		for(int i=0;i<board.size();i++)
+		for(int i=0;i<BOARD_SIZE;i++)
 		{
 			copiedBoard.add(new positionTicTacToe(board.get(i).x,board.get(i).y,board.get(i).z, board.get(i).state));
 		}
@@ -109,21 +133,34 @@ public class aiTicTacToe {
         List<positionTicTacToe> boardCopy = deepCopyATicTacToeBoard(board);
 
         // set up next move object
-        positionTicTacToe nextMove = new positionTicTacToe(0, 0, 0);
+        positionTicTacToe nextMove = new positionTicTacToe(-1, -1, player);
+        considered = 0;
 
         // run minimax
         int maxScore = maximize(nextMove, boardCopy, player, 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
         // end time
         long endTime = System.nanoTime(); 
-        double timeTaken = (endTime - startTime) / 1000000.0;
+        double timeTaken = (endTime - startTime) / 1000000000.0;
         if (verbose)
         {
-            System.out.println(String.format("depth: %d | score: %d | time: %f.2| considered: %d", maxDepth, maxScore, timeTaken, considered));
+            System.out.println(String.format("depth: %d | score: %d | time: %.2f| considered: %d", maxDepth, maxScore, timeTaken, considered));
         }
 
         // return best move
         return nextMove;
+    }
+
+    /**
+     * Copy the content from the source position to the target position
+     * @param source
+     * @param target
+     */
+    private void copyMove(positionTicTacToe source, positionTicTacToe target)
+    {
+        target.x = source.x;
+        target.y = source.y;
+        target.z = source.z;
     }
 
     /**
@@ -138,53 +175,50 @@ public class aiTicTacToe {
      */
     public int maximize(positionTicTacToe nextMove, List<positionTicTacToe> board, int player,
             int depth, int alpha, int beta) {
+        
+        // count considered moves
+        considered++;
 
         if (depth == maxDepth) {
             return heuristic(board);
         }
 
         int maxScore = Integer.MIN_VALUE;
-        for (int i = 0; i < board.size(); i++) {
-            if (isEmptyPosition(board.get(i), board))
+        for (int i = 0; i < BOARD_SIZE; i++) {
+
+            int positionIndex = moveOrdering[i];
+
+            // break if this position is not empty
+            if (!isEmptyPosition(board.get(positionIndex), board)) continue;
+            
+            // make move
+            board.get(positionIndex).state = player;
+
+            if (isEnded(board))
             {
-                // make move
-                board.get(i).state = player;
-
-                if (isEnded(board)) 
-                {
-                    board.get(i).state = 0;
-                    alpha = Integer.MAX_VALUE;
-                    if (depth == 0)
-                    {
-                        positionTicTacToe move = board.get(i);
-                        nextMove.x = move.x;
-                        nextMove.y = move.y;
-                        nextMove.z = move.z;
-                    }
-                    return alpha;
-                }
-
-                // change according to the player
-                int score = minimize(board, opponent(player), (depth + 1), alpha, beta);
-
-                if (score >= maxScore) {
-                    maxScore = score;
-                    if (depth == 0)
-                    {
-                        positionTicTacToe move = board.get(i);
-                        nextMove.x = move.x;
-                        nextMove.y = move.y;
-                        nextMove.z = move.z;
-                    }
-                }
-
-                alpha = Math.max(alpha, maxScore);
-                if (beta <= alpha)
-                    break;
-
-                // backtrack and reverse move
-                board.get(i).state = 0;
+                if (depth == 0) copyMove(board.get(positionIndex), nextMove);
+                board.get(positionIndex).state = 0;
+                return 1000000; // player win
             }
+            
+            // change according to the player
+            int score = minimize(board, opponent(player), (depth + 1), alpha, beta);
+
+            // update maxScore if score is larger
+            if (score > maxScore) {
+                maxScore = score;
+                if (depth == 0) copyMove(board.get(positionIndex), nextMove);
+            }
+
+            // set alpha to the max of the seen scores
+            alpha = Math.max(alpha, maxScore);
+
+            // backtrack and reverse move
+            board.get(positionIndex).state = 0;
+
+            // break if path is worse than seen
+            if (beta <= alpha)
+                break;
         }
         return maxScore;
     }
@@ -200,34 +234,67 @@ public class aiTicTacToe {
      */
     public int minimize(List<positionTicTacToe> board, int player,
             int depth, int alpha, int beta) {
+        
+        // count considered moves
+        considered++;
 
         if (depth == maxDepth) {
             return heuristic(board);
         }
 
         int minScore = Integer.MAX_VALUE;
-        for (int i = 0; i < board.size(); i++) {
-            if (isEmptyPosition(board.get(i), board)) {
-                board.get(i).state = player;
+        for (int i = 0; i < BOARD_SIZE; i++) {
 
-                if (isEnded(board)) {
-                    board.get(i).state = 0;
-                    beta = Integer.MIN_VALUE;
-                    return beta;
-                }
+            int positionIndex = moveOrdering[i];
 
-                // change according to the player
-                int score = maximize(null, board, opponent(player), (depth + 1), alpha, beta);
-                minScore = Math.min(minScore, score);
-                beta = Math.min(beta, minScore);
-                if (beta <= alpha)
-                    break;
+            // break if this position is not empty
+            if (!isEmptyPosition(board.get(positionIndex), board)) continue;
 
-                // backtrack and reverse move
-                board.get(i).state = 0;
+            board.get(positionIndex).state = player;
+
+            if (isEnded(board))
+            {
+                board.get(positionIndex).state = 0;
+                return -1000000; // player loss
             }
+
+            int score = maximize(null, board, opponent(player), (depth + 1), alpha, beta);
+
+            // change according to the player
+            minScore = Math.min(minScore, score);
+            beta = Math.min(beta, minScore);
+
+            // backtrack and reverse move
+            board.get(positionIndex).state = 0;
+
+            if (beta <= alpha)
+                break;
         }
         return minScore;
+    }
+
+    /**
+     * Get the heuristic state of the winning line.
+     * If there are mixed pieces then this line is worthless and return -1.
+     * @param line
+     * @param board
+     * @return if line is winnable number of pieces of a player else -1
+     */
+    private int getHeuristicStateFromLine(positionTicTacToe[] line, List<positionTicTacToe> board)
+    {
+        int playerCount = 0;
+        int opponentCount = 0;
+
+        for (int state : getStateOfPositionFromBoard(line, board))
+        {
+            if (state == 0) continue;
+            else if (state == player) playerCount++;
+            else opponentCount++;
+        }
+
+        if (playerCount > 0 && opponentCount > 0) return -1;
+        else if (playerCount > 0) return playerCount;
+        else return -opponentCount;
     }
 
     /**
@@ -239,50 +306,41 @@ public class aiTicTacToe {
      * @return the heuristic number of the board
      */
     private int heuristic(List<positionTicTacToe> board) {
-        int opponent = opponent(player);
-        int playerScore = 0;
-        int opponentScore = 0;
-
+        int score = 0;
         for (positionTicTacToe[] winningLine : winningLines) {
-            List<Integer> states = new ArrayList<>();
-            for (positionTicTacToe pos : winningLine) {
-                states.add(getStateOfPositionFromBoard(pos, board));
-            }
+            int lineState = getHeuristicStateFromLine(winningLine, board);
 
-            int playerSpots = (int) states.stream().filter(state -> state == player).count();
-            switch (playerSpots) {
+            if (lineState == -1) continue;
+
+            switch (lineState) {
             case 4:
-                playerScore += 10000;
-                break;
+                return 1000000;
             case 3:
-                playerScore += 100;
+                score += 1000;
                 break;
             case 2:
-                playerScore += 10;
+                score += 30;
                 break;
             case 1:
-                playerScore += 1;
+                score += 1;
                 break;
-            }
-
-            int otherSpots = (int) states.stream().filter(state -> state == opponent).count();
-            switch (otherSpots) {
-            case 4:
-                opponentScore += 10000;
+            case -1:
+                score -= 1;
                 break;
-            case 3:
-                opponentScore += 100;
+            case -2:
+                score -= 30;
                 break;
-            case 2:
-                opponentScore += 10;
+            case -3:
+                score -= 1000;
                 break;
-            case 1:
-                opponentScore += 1;
+            case -4:
+                return -1000000;
+            default:
                 break;
             }
         }
 
-        return playerScore - opponentScore;
+        return score;
     }
 
     /**
@@ -304,7 +362,8 @@ public class aiTicTacToe {
                 }
             }
 
-            if (marker != 0) return true;
+            if (marker != 0) 
+                return true;
         }
         return false;
     }
@@ -313,27 +372,27 @@ public class aiTicTacToe {
      * Maps each block on the board to their corresponding winning lines
      * @return the mapping
      */
-    public static int[][] mapWinningLines(positionTicTacToe[][] winningLines)
+    public static int[] mapWinningLines(positionTicTacToe[][] winningLines)
     {
-        int[][] possibleWins = new int[64][4];
-        for (int[] slot : possibleWins) Arrays.fill(slot, -1);
-
+        int[] possibleWins = new int[BOARD_SIZE];
         for (int i = 0; i < winningLines.length; i++)
         {
             positionTicTacToe[] line = winningLines[i];
             for (positionTicTacToe position : line)
             {
                 int index = getListIndex(position);
-                for (int j = 0; j < 4; j++)
-                {
-                    if (possibleWins[index][j] > -1) continue;
-                    possibleWins[index][j] = i;
-                    break;
-                }
+                possibleWins[index]++;
             }
         }
 
-        return possibleWins;
+        Integer[] objOrdering = new Integer[BOARD_SIZE];
+        for (int i = 0; i < BOARD_SIZE; i++) objOrdering[i] = i;
+        Arrays.sort(objOrdering, (e1, e2) -> possibleWins[e2] - possibleWins[e1]);
+
+        int[] ordering = new int[BOARD_SIZE];
+        for (int i = 0; i < BOARD_SIZE; i++) ordering[i] = objOrdering[i];
+
+        return ordering;
     }
 
     /**
